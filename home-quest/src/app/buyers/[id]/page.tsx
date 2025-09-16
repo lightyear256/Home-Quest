@@ -9,7 +9,8 @@ const BuyerDetailsPage = () => {
   const [buyer, setBuyer] = useState<any|null>(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const [buyerLoaded, setBuyerLoaded] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [error, setError] = useState("");
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -56,7 +57,6 @@ const BuyerDetailsPage = () => {
 
   const fetchBuyer = async () => {
     try {
-      setLoading(true);
       const response = await axios(`${process.env.NEXT_PUBLIC_API_URL}/buyer/buyer/?id=${buyerId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -72,14 +72,12 @@ const BuyerDetailsPage = () => {
       setError('Failed to fetch buyer data');
       console.error('Error fetching buyer:', err);
     } finally {
-      setLoading(false);
+      setBuyerLoaded(true);
     }
   };
 
   const fetchBuyerHistory = async () => {
-    setLoading(true)
     try {
-      setHistoryLoading(true);
       const response = await axios(`${process.env.NEXT_PUBLIC_API_URL}/buyer/history?id=${buyerId}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -93,16 +91,21 @@ const BuyerDetailsPage = () => {
     } catch (err) {
       console.error('Error fetching buyer history:', err);
     } finally {
-      setHistoryLoading(false);
+      setHistoryLoaded(true);
     }
   };
 
   useEffect(() => {
-    if (buyerId) {
+    if (buyerLoaded && historyLoaded) {
+      setLoading(false);
       setIsLoaded(true);
+    }
+  }, [buyerLoaded, historyLoaded]);
+
+  useEffect(() => {
+    if (buyerId) {
       fetchBuyer();
       fetchBuyerHistory();
-      
     }
   }, [buyerId]);
 
@@ -500,11 +503,7 @@ const getDisplayValue = (field: EnumField, value: EnumValue): string => {
                 Change History
               </h3>
               
-              {historyLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-                </div>
-              ) : history.length > 0 ? (
+              {history.length > 0 ? (
                 <div className="space-y-4 max-h-80 overflow-y-auto">
                   {history.map((entry:any, index) => (
                     <div
