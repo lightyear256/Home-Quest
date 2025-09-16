@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import {
@@ -45,7 +45,7 @@ const syncFiltersWithURL = (filters: any, searchQuery: string, router: any) => {
   router.replace(newUrl, { scroll: false });
 };
 
-export default function BuyersPage() {
+function BuyersContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -704,5 +704,24 @@ export default function BuyersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+        <p className="text-slate-600">Loading buyer details...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function BuyersPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <BuyersContent />
+    </Suspense>
   );
 }
