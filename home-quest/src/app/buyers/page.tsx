@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Plus,
   Search,
@@ -19,7 +20,7 @@ import axios from "axios";
 import Link from "next/link";
 import { Button } from "../components/Buttons";
 
-const statusColors:any = {
+const statusColors: any = {
   New: "bg-blue-100 text-blue-800",
   Qualified: "bg-green-100 text-green-800",
   Contacted: "bg-yellow-100 text-yellow-800",
@@ -29,17 +30,37 @@ const statusColors:any = {
   Dropped: "bg-red-100 text-red-800",
 };
 
+const syncFiltersWithURL = (filters: any, searchQuery: string, router: any) => {
+  const params = new URLSearchParams();
+  
+  if (filters.city) params.set('city', filters.city);
+  if (filters.propertyType) params.set('propertyType', filters.propertyType);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.timeline) params.set('timeline', filters.timeline);
+  if (searchQuery.trim()) params.set('search', searchQuery.trim());
+  
+  const queryString = params.toString();
+  const newUrl = queryString ? `/buyers?${queryString}` : '/buyers';
+  
+  router.replace(newUrl, { scroll: false });
+};
+
 export default function BuyersPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
   const [loading, setLoading] = useState(false);
   const [buyers, setBuyers] = useState<any | null>([]);
   const [filteredBuyers, setFilteredBuyers] = useState<any | null>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  
   const [filters, setFilters] = useState({
-    city: "",
-    propertyType: "",
-    status: "",
-    timeline: "",
+    city: searchParams.get('city') || '',
+    propertyType: searchParams.get('propertyType') || '',
+    status: searchParams.get('status') || '',
+    timeline: searchParams.get('timeline') || '',
   });
+  
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoaded, setIsLoaded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -49,30 +70,30 @@ export default function BuyersPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [buyerToDelete, setBuyerToDelete] = useState<any | null>("");
 
-  const router = useRouter();
   const itemsPerPage = 10;
+
   async function fetcher() {
-    try{
+    try {
       setLoading(true);
       const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_URL}/buyer/buyer`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        `${process.env.NEXT_PUBLIC_API_URL}/buyer/buyer`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (response.data.success) {
+        setBuyers(response.data.buyers);
+        setFilteredBuyers(response.data.buyers);
       }
-    );
-    if (response.data.success) {
-      setBuyers(response.data.buyers);
-      setFilteredBuyers(response.data.buyers);
+    } catch (e: any) {
+      console.log("error Encountered ", e);
+    } finally {
+      setLoading(false);
     }
-    }catch(e:any){
-      console.log("error Encountered ",e);
-    }finally{
-      setLoading(false)
-    }
-    
   }
+
   useEffect(() => {
     setIsLoaded(true);
     fetcher();
@@ -125,25 +146,37 @@ export default function BuyersPage() {
     }
   }, [searchQuery, filters, buyers, sortField, sortDirection]);
 
-  const handleFilterChange = (key:any, value:any) => {
-    setFilters((prev) => ({
-      ...prev,
+  const handleFilterChange = (key: any, value: any) => {
+    const newFilters = {
+      ...filters,
       [key]: value,
-    }));
+    };
+    setFilters(newFilters);
+    
+    syncFiltersWithURL(newFilters, searchQuery, router);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    syncFiltersWithURL(filters, value, router);
   };
 
   const clearFilters = () => {
-    setFilters({
+    const clearedFilters = {
       city: "",
       propertyType: "",
       status: "",
       timeline: "",
-    });
+    };
+    
+    setFilters(clearedFilters);
     setSearchQuery("");
+    
+    router.replace('/buyers', { scroll: false });
   };
 
-  const formatBudget = (min:number, max:number) => {
-    const formatAmount = (amount:number) => {
+  const formatBudget = (min: number, max: number) => {
+    const formatAmount = (amount: number) => {
       if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`;
       if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
       return `₹${amount.toLocaleString()}`;
@@ -157,7 +190,7 @@ export default function BuyersPage() {
     return "Not specified";
   };
 
-  const formatDate = (dateString:string) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
@@ -172,7 +205,7 @@ export default function BuyersPage() {
 
   const confirmDelete = async () => {
     if (buyerToDelete) {
-      setBuyers((prev:any) => prev.filter((b: any) => b.id !== buyerToDelete));
+      setBuyers((prev: any) => prev.filter((b: any) => b.id !== buyerToDelete));
       const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_API_URL}/buyer/delete`,
         {
@@ -189,7 +222,7 @@ export default function BuyersPage() {
     }
   };
 
-  const handleStatusChange = async (buyerId:string, newStatus:any) => {
+  const handleStatusChange = async (buyerId: string, newStatus: any) => {
     const response = await axios.put(
       `${process.env.NEXT_PUBLIC_API_URL}/buyer/update_status`,
       {
@@ -203,8 +236,8 @@ export default function BuyersPage() {
       }
     );
     if (response.data.success) {
-      setBuyers((prev:any) =>
-        prev.map((buyer:any) =>
+      setBuyers((prev: any) =>
+        prev.map((buyer: any) =>
           buyer.id === buyerId
             ? {
                 ...buyer,
@@ -222,7 +255,7 @@ export default function BuyersPage() {
       "fullName,email,phone,city,propertyType,bhk,purpose,budgetMin,budgetMax,timeline,source,notes,tags,status";
     const rows = filteredBuyers
       .map(
-        (buyer:any) =>
+        (buyer: any) =>
           `"${buyer.fullName}","${buyer.email || ""}","${buyer.phone}","${
             buyer.city
           }","${buyer.propertyType}","${buyer.bhk || ""}","${buyer.purpose}","${
@@ -248,7 +281,7 @@ export default function BuyersPage() {
     startIndex + itemsPerPage
   );
 
-if (loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
         <div className="text-center">
@@ -258,9 +291,9 @@ if (loading) {
       </div>
     );
   }
-  
+
   return (
-    <div className=" mt-25 min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
+    <div className="mt-25 min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div
           className={`mb-8 transition-all duration-1000 ${
@@ -322,7 +355,7 @@ if (loading) {
                 type="text"
                 placeholder="Search by name, phone, or email..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
@@ -392,9 +425,9 @@ if (loading) {
                 className="px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">All Timelines</option>
-                <option value="0-3m">0-3 months</option>
-                <option value="3-6m">3-6 months</option>
-                <option value=">6m">&gt;6 months</option>
+                <option value="ZeroToThree">0-3 months</option>
+                <option value="ThreeToSix">3-6 months</option>
+                <option value="MoreThanSix">&gt;6 months</option>
                 <option value="Exploring">Exploring</option>
               </select>
 
@@ -489,7 +522,7 @@ if (loading) {
                         )}
                         {buyer.tags.length > 0 && (
                           <div className="flex gap-1 mt-1">
-                            {buyer.tags.slice(0, 2).map((tag:string) => (
+                            {buyer.tags.slice(0, 2).map((tag: string) => (
                               <span
                                 key={tag}
                                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800"
@@ -558,30 +591,29 @@ if (loading) {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-        
-                        {String(buyer.ownerId)===localStorage.getItem("session-id")&&
-                        <div className="flex gap-x-1">
-                        <button
-                          onClick={() =>
-                            router.push(`/buyers/edit/${buyer.id}`)
-                          }
-                          className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                          
-                        </button>
-                        <button
-                          onClick={() => handleDeleteBuyer(buyer.id)}
-                          className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        </div>
-                        }
-                        </div>
-                      
+
+                        {String(buyer.ownerId) ===
+                          localStorage.getItem("session-id") && (
+                          <div className="flex gap-x-1">
+                            <button
+                              onClick={() =>
+                                router.push(`/buyers/edit/${buyer.id}`)
+                              }
+                              className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBuyer(buyer.id)}
+                              className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
