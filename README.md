@@ -74,3 +74,18 @@ repo-root/
 └─ README.md
 ```
 
+## Design Notes
+
+### Validation
+- **Backend-first validation**: All incoming data is validated on the API using middleware (e.g., Zod) and Prisma schema constraints to ensure type safety and prevent invalid writes.  
+- **Lightweight frontend checks**: Basic required-field and format checks (such as email and phone) provide immediate feedback before an API call.
+
+### Rendering Strategy (SSR vs Client)
+- **Home page (SSR)**: The landing/home page is rendered on the server for improved SEO and faster initial load for unauthenticated users.  
+- **Dashboard & Auth pages (CSR)**: User-specific pages (dashboard, login, signup) use client-side rendering because their content depends on the authenticated user’s token.  
+- **Static marketing pages (SSG)**: Pages like “About” are statically generated at build time for optimal performance.
+
+### Ownership Enforcement
+- Every API route that reads or mutates buyer data verifies the user’s identity from the JWT.  
+- Prisma `where` clauses include the `ownerId` to enforce row-level security.
+
