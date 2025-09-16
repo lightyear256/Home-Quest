@@ -11,3 +11,6 @@ app.use(cors({
 }))
 app.use("/admin",adminRouter)
 app.use("/buyer",buyerRouter)
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
