@@ -1,10 +1,10 @@
-"use client"
-import React, { useEffect, useState } from 'react';
-import { Button } from './components/Buttons';
-import { useRouter } from 'next/navigation';
-import { isTokenExpired } from './components/utils/tokenCheker';
-import { Users, Search, Phone, Building } from 'lucide-react';
-import axios from 'axios';
+"use client";
+import React, { useEffect, useState } from "react";
+import { Button } from "./components/Buttons";
+import { useRouter } from "next/navigation";
+import { isTokenExpired } from "./utils/tokenCheker";
+import { Users, Search, Phone, Building } from "lucide-react";
+import axios from "axios";
 
 interface Stats {
   totalClients: number;
@@ -13,13 +13,16 @@ interface Stats {
 
 export default function Home() {
   const router = useRouter();
-  
+
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
 
-  const token = typeof window !== "undefined" ? (localStorage.getItem("token") || localStorage.getItem("Token")) : null;
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("token") || localStorage.getItem("Token")
+      : null;
   const shouldShowDashboard = token && !isTokenExpired(token);
 
   const handleSignUp = () => {
@@ -32,12 +35,15 @@ export default function Home() {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/buyer/get_count`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/buyer/get_count`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
       if (response.data.success) {
         setStats({
           totalClients: response.data.totalClients,
@@ -58,7 +64,8 @@ export default function Home() {
     if (typeof window === "undefined") return;
 
     try {
-      const token = localStorage.getItem("token") || localStorage.getItem("Token");
+      const token =
+        localStorage.getItem("token") || localStorage.getItem("Token");
 
       if (token && isTokenExpired(token)) {
         alert("Token expired! Please log in again.");
@@ -74,7 +81,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    
+
     if (shouldShowDashboard) {
       fetchStats();
     } else {
@@ -88,7 +95,7 @@ export default function Home() {
     const handleAuthChange = () => {
       checkAuthStatus();
     };
-     
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "token" || e.key === "Token") {
         checkAuthStatus();
@@ -105,38 +112,38 @@ export default function Home() {
   }, [mounted]);
 
   const statsData = [
-    { title: 'Total Clients', value: stats?.totalClients || 0 },
-    { title: 'Pending Deals', value: stats?.pendingDeals || 0 }
+    { title: "Total Clients", value: stats?.totalClients || 0 },
+    { title: "Pending Deals", value: stats?.pendingDeals || 0 },
   ];
 
   const quickActions = [
-    { 
-      icon: Users, 
-      title: 'Add Client', 
-      desc: 'Register new client', 
-      color: 'green',
-      onClick: () => router.push("/buyers/new") 
+    {
+      icon: Users,
+      title: "Add Client",
+      desc: "Register new client",
+      color: "green",
+      onClick: () => router.push("/buyers/new"),
     },
-    { 
-      icon: Search, 
-      title: 'Search', 
-      desc: 'Find properties/clients', 
-      color: 'primary',
-      onClick: () => router.push("/buyers") 
+    {
+      icon: Search,
+      title: "Search",
+      desc: "Find properties/clients",
+      color: "primary",
+      onClick: () => router.push("/buyers"),
     },
-    { 
-      icon: Phone, 
-      title: 'Contact Us', 
-      desc: 'Contact Our Team', 
-      color: 'primary',
-      onClick: () => router.push("/contact") 
+    {
+      icon: Phone,
+      title: "Contact Us",
+      desc: "Contact Our Team",
+      color: "primary",
+      onClick: () => router.push("/contact"),
     },
-    { 
-      icon: Building, 
-      title: 'About Us', 
-      desc: 'Get Know About Us', 
-      color: 'primary',
-      onClick: () => router.push("/about") 
+    {
+      icon: Building,
+      title: "About Us",
+      desc: "Get Know About Us",
+      color: "primary",
+      onClick: () => router.push("/about"),
     },
   ];
 
@@ -158,14 +165,16 @@ export default function Home() {
           <main className="mt-25 relative z-10 max-w-7xl mx-auto px-6 py-8">
             <div className="mb-12">
               <h2 className="text-4xl font-bold text-slate-800 mb-2">
-                Welcome back! 
+                Welcome back!
               </h2>
-              <p className="text-xl text-slate-600">Here's what's happening with your properties today.</p>
+              <p className="text-xl text-slate-600">
+                Here's what's happening with your properties today.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
               {statsData.map((stat, index) => (
-                <div 
+                <div
                   key={stat.title}
                   className="group bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 hover:bg-white transition-all duration-500 hover:shadow-lg hover:-translate-y-1"
                 >
@@ -188,13 +197,15 @@ export default function Home() {
             )}
 
             <div className="mb-12">
-              <h3 className="text-2xl font-bold text-slate-800 mb-6">Quick Actions</h3>
+              <h3 className="text-2xl font-bold text-slate-800 mb-6">
+                Quick Actions
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {quickActions.map((action) => {
                   const Icon = action.icon;
-                  
+
                   return (
-                    <div 
+                    <div
                       key={action.title}
                       onClick={action.onClick}
                       className="group bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 hover:bg-white transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
@@ -202,7 +213,9 @@ export default function Home() {
                       <div className="w-14 h-14 bg-primary-200 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300">
                         <Icon className="w-7 h-7" />
                       </div>
-                      <h4 className="font-semibold text-slate-800 mb-2">{action.title}</h4>
+                      <h4 className="font-semibold text-slate-800 mb-2">
+                        {action.title}
+                      </h4>
                       <p className="text-slate-600 text-sm">{action.desc}</p>
                     </div>
                   );
@@ -211,24 +224,27 @@ export default function Home() {
             </div>
 
             <div className="bg-gradient-to-r from-primary-600 to-primary-800 rounded-3xl p-8 text-center text-white">
-              <h3 className="text-3xl font-bold mb-4">Ready to capture your first lead?</h3>
+              <h3 className="text-3xl font-bold mb-4">
+                Ready to capture your first lead?
+              </h3>
               <p className="text-primary-100 mb-8 text-lg">
-                Start building your buyer database and convert more prospects into customers.
+                Start building your buyer database and convert more prospects
+                into customers.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  variant="secondary" 
+                <Button
+                  variant="secondary"
                   size="lg"
                   className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
-                  onClick={() => router.push('/buyers/new')}
+                  onClick={() => router.push("/buyers/new")}
                 >
                   Add Lead
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="lg"
                   className="border-white/30 text-white hover:bg-white/10 backdrop-blur-sm"
-                  onClick={() => router.push('/buyers')}
+                  onClick={() => router.push("/buyers")}
                 >
                   View All Leads
                 </Button>
@@ -242,25 +258,17 @@ export default function Home() {
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-8">
               Welcome to <span className="text-primary-800">Home Quest</span>
             </h1>
-            
+
             <p className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed">
               Your All New CRM for Properties
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                variant="primary" 
-                size="lg" 
-                onClick={handleSignUp}
-              >
+              <Button variant="primary" size="lg" onClick={handleSignUp}>
                 Sign Up
               </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={handleSignIn}
-              >
+
+              <Button variant="outline" size="lg" onClick={handleSignIn}>
                 Sign In
               </Button>
             </div>

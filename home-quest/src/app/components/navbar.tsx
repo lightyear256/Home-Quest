@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { isTokenExpired } from "./utils/tokenCheker";
+import { isTokenExpired } from "../utils/tokenCheker";
 import { Button } from "./Buttons";
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -149,10 +149,10 @@ export function Header() {
           <Link href={"/"}>
             <Image
               src={"/assets/trace.svg"}
-              alt='logo' 
-                            width={120} 
-                            height={20}
-                            className="sm:w-[220px] sm:h-[90px]"
+              alt="logo"
+              width={120}
+              height={20}
+              className="sm:w-[220px] sm:h-[90px]"
             />
           </Link>
         </div>
@@ -169,7 +169,6 @@ export function Header() {
 
         {isLoggedIn ? (
           <div className="hidden lg:flex items-center gap-x-2 xl:gap-x-3">
-            
             <Button
               variant="danger"
               size="sm"
