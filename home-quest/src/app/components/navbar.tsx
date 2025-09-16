@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-// import { Button } from './Buttons';
 import { Menu, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { isTokenExpired } from "./utils/tokenCheker";
@@ -99,7 +98,7 @@ export function Header() {
     { name: "Home", href: "/" },
     { name: "About", href: "/about" },
     { name: "My Clients", href: "/buyers" },
-    { name: "Add Data", href: "/add_data" },
+    { name: "Add Data", href: "/buyers/new" },
     { name: "Contact", href: "/contact" },
   ];
 
@@ -150,10 +149,10 @@ export function Header() {
           <Link href={"/"}>
             <Image
               src={"/assets/trace.svg"}
-              alt="logo"
-              width={320}
-              height={50}
-              className="sm:w-[170px] sm:h-[120px]"
+              alt='logo' 
+                            width={120} 
+                            height={20}
+                            className="sm:w-[220px] sm:h-[90px]"
             />
           </Link>
         </div>

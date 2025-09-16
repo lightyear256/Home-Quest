@@ -1,10 +1,10 @@
-"use client"
+"use client";
 import { useState } from "react";
-import { Button } from "../components/Buttons";
+import { Button } from "../../components/Buttons";
 import axios from "axios";
 
 export default function AddData() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any|null>({
     fullName: "",
     email: "",
     phone: "",
@@ -18,82 +18,101 @@ export default function AddData() {
     source: "",
     status: "",
     notes: "",
-    tags: []
+    tags: [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
-  const propertyTypes = ["Apartment","Villa","Plot","Office","Retail"];
+  const propertyTypes = ["Apartment", "Villa", "Plot", "Office", "Retail"];
   const bhkOptions = [1, 2, 3, 4];
-  const purposes = ["Buy","Rent"];
-  const timelines = ["0-3m","3-6m","6m","Exploring"];
-  const sources = ["Website","Referral","Walk-in","Call","Other"];
-  const statuses = ["New","Qualified","Contacted","Visited","Negotiation","Converted","Dropped"];
-  const availableTags = ["Investment", "First Home", "Urgent", "Premium", "Budget"];
-  const city=["Chandigarh","Mohali","Zirakpur","Panchkula","Other"]
+  const purposes = ["Buy", "Rent"];
+  const timelines = ["0-3m", "3-6m", "6m", "Exploring"];
+  const sources = ["Website", "Referral", "Walk-in", "Call", "Other"];
+  const statuses = [
+    "New",
+    "Qualified",
+    "Contacted",
+    "Visited",
+    "Negotiation",
+    "Converted",
+    "Dropped",
+  ];
+  const availableTags = [
+    "Investment",
+    "First Home",
+    "Urgent",
+    "Premium",
+    "Budget",
+  ];
+  const city = ["Chandigarh", "Mohali", "Zirakpur", "Panchkula", "Other"];
 
-  
-  const handleInputChange = (e:any) => {
+  const handleInputChange = (e: any) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+    setFormData((prev:any) => ({
       ...prev,
-      [name]: type === "number" ? (value === "" ? "" : Number(value)) : value
+      [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
     }));
   };
 
-  const handleTagChange = (tag:any) => {
-    setFormData(prev => ({
+  const handleTagChange = (tag: any) => {
+    setFormData((prev:any) => ({
       ...prev,
-      tags: prev.tags.includes(tag) 
-        ? prev.tags.filter(t => t !== tag)
-        : [...prev.tags, tag]
+      tags: prev.tags.includes(tag)
+        ? prev.tags.filter((t:string) => t !== tag)
+        : [...prev.tags, tag],
     }));
   };
   const bhkcnv: Record<string, string> = {
-  "1": "One",
-  "2": "Two",
-  "3": "Three",
-  "4": "Four"
-};
-  const timecnv: Record<string, string> ={
-    "0-3m":"ZeroToThree",
-    "3-6m":"ThreeToSix",
-    "6m":"MoreThanSix"
-  }
+    "1": "One",
+    "2": "Two",
+    "3": "Three",
+    "4": "Four",
+  };
+  const timecnv: Record<string, string> = {
+    "0-3m": "ZeroToThree",
+    "3-6m": "ThreeToSix",
+    "6m": "MoreThanSix",
+  };
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setMessage("");
 
-    // Basic validation
-    if (!formData.fullName || !formData.phone || !formData.city || !formData.propertyType || 
-        !formData.purpose || !formData.timeline || !formData.source || !formData.status) {
+    if (
+      !formData.fullName ||
+      !formData.phone ||
+      !formData.city ||
+      !formData.propertyType ||
+      !formData.purpose ||
+      !formData.timeline ||
+      !formData.source ||
+      !formData.status
+    ) {
       setMessage("Please fill in all required fields.");
       setIsSubmitting(false);
       return;
     }
 
     try {
-      // Prepare data for submission
       const submitData = {
         ...formData,
         budgetMin: formData.budgetMin ? Number(formData.budgetMin) : null,
         budgetMax: formData.budgetMax ? Number(formData.budgetMax) : null,
-        bhk: formData.bhk === "" ? null : formData.bhk
+        bhk: formData.bhk === "" ? null : formData.bhk,
       };
 
-const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_buyers`,
-  submitData, 
-  {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  }
-);
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/buyer/add_buyers`,
+        submitData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (response.data.success) {
         setMessage("Data submitted successfully!");
-        // Reset form
         setFormData({
           fullName: "",
           email: "",
@@ -108,13 +127,13 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
           source: "",
           status: "",
           notes: "",
-          tags: []
+          tags: [],
         });
       } else {
-        throw new Error('Failed to submit data');
+        throw new Error("Failed to submit data");
       }
     } catch (error) {
-      console.error('Error submitting data:', error);
+      console.error("Error submitting data:", error);
       setMessage("Error submitting data. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -130,10 +149,11 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
           </h1>
 
           <div className="space-y-6">
-            {/* Personal Information */}
             <div className="border-b border-gray-200 pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Personal Information</h2>
-              
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Personal Information
+              </h2>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -191,18 +211,21 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   >
                     <option value="">Select city</option>
-                    {city.map(city => (
-                      <option key={city} value={city}>{city}</option>
+                    {city.map((city) => (
+                      <option key={city} value={city}>
+                        {city}
+                      </option>
                     ))}
                   </select>
                 </div>
               </div>
             </div>
 
-            {/* Property Details */}
             <div className="border-b border-gray-200 pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Property Details</h2>
-              
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Property Details
+              </h2>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -216,28 +239,36 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   >
                     <option value="">Select property type</option>
-                    {propertyTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                    {propertyTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    BHK
-                  </label>
-                  <select
-                    name="bhk"
-                    value={formData.bhk || ""}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                  >
-                    <option value="">Select BHK</option>
-                    {bhkOptions.map(bhk => (
-                      <option key={bhk} value={bhkcnv[bhk]}>{bhk} BHK</option>
-                    ))}
-                  </select>
-                </div>
+                {!["", "Office", "Plot", "Retail"].includes(
+                  formData.propertyType
+                ) && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      BHK
+                    </label>
+                    <select
+                      name="bhk"
+                      value={formData.bhk || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                    >
+                      <option value="">Select BHK</option>
+                      {bhkOptions.map((bhk) => (
+                        <option key={bhk} value={bhkcnv[bhk]}>
+                          {bhk} BHK
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -251,8 +282,10 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   >
                     <option value="">Select purpose</option>
-                    {purposes.map(purpose => (
-                      <option key={purpose} value={purpose}>{purpose}</option>
+                    {purposes.map((purpose) => (
+                      <option key={purpose} value={purpose}>
+                        {purpose}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -269,8 +302,10 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   >
                     <option value="">Select timeline</option>
-                    {timelines.map(timeline => (
-                      <option key={timeline} value={timecnv[timeline]}>{timeline}</option>
+                    {timelines.map((timeline) => (
+                      <option key={timeline} value={timecnv[timeline]}>
+                        {timeline}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -307,10 +342,11 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
               </div>
             </div>
 
-            {/* Lead Management */}
             <div className="border-b border-gray-200 pb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Lead Management</h2>
-              
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Lead Management
+              </h2>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -324,8 +360,10 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   >
                     <option value="">Select source</option>
-                    {sources.map(source => (
-                      <option key={source} value={source}>{source}</option>
+                    {sources.map((source) => (
+                      <option key={source} value={source}>
+                        {source}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -342,8 +380,10 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                   >
                     <option value="">Select status</option>
-                    {statuses.map(status => (
-                      <option key={status} value={status}>{status}</option>
+                    {statuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -354,15 +394,15 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
                   Tags
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {availableTags.map(tag => (
+                  {availableTags.map((tag) => (
                     <button
                       key={tag}
                       type="button"
                       onClick={() => handleTagChange(tag)}
                       className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                         formData.tags.includes(tag)
-                          ? 'bg-primary-500 text-white'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          ? "bg-primary-500 text-white"
+                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                       }`}
                     >
                       {tag}
@@ -386,24 +426,24 @@ const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/buyer/add_
               </div>
             </div>
 
-            {/* Submit Button */}
             <div className="pt-6">
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="w-full bg-primary text-white py-3 px-6 rounded-md font-semibold hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Lead Data'}
+                {isSubmitting ? "Submitting..." : "Submit Lead Data"}
               </Button>
             </div>
 
-            {/* Message Display */}
             {message && (
-              <div className={`p-4 rounded-md ${
-                message.includes('Error') 
-                  ? 'bg-red-50 text-red-800 border border-red-200'
-                  : 'bg-green-50 text-green-800 border border-green-200'
-              }`}>
+              <div
+                className={`p-4 rounded-md ${
+                  message.includes("Error")
+                    ? "bg-red-50 text-red-800 border border-red-200"
+                    : "bg-green-50 text-green-800 border border-green-200"
+                }`}
+              >
                 {message}
               </div>
             )}

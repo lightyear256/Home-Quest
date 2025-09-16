@@ -4,7 +4,6 @@ import Papa from 'papaparse';
 import z from 'zod';
 import type { AuthenticatorRequest } from '../middleware/authMiddleware.js';
 
-// CSV Import Schema with proper transformations
 const CSVBuyerSchema = z.object({
   fullName: z.string().min(2).max(80),
   email: z.string().email().optional().or(z.literal('')),
@@ -22,29 +21,7 @@ const CSVBuyerSchema = z.object({
   tags: z.string().optional().transform(val => val ? val.split(',').map(tag => tag.trim()).filter(tag => tag !== '') : []),
 });
 
-// Helper functions for enum conversions (for user-friendly CSV templates)
-// function timelineToUserFriendly(timeline: string): string {
-//   const mapping = {
-//     'ZeroToThree': '0-3m',
-//     'ThreeToSix': '3-6m', 
-//     'MoreThanSix': '>6m',
-//     'Exploring': 'Exploring'
-//   };
-//   return mapping[timeline as keyof typeof mapping] || timeline;
-// }
 
-// function sourceToUserFriendly(source: string): string {
-//   const mapping = {
-//     'WalkIn': 'Walk-in',
-//     'Website': 'Website',
-//     'Referral': 'Referral', 
-//     'Call': 'Call',
-//     'Other': 'Other'
-//   };
-//   return mapping[source as keyof typeof mapping] || source;
-// }
-
-// Build filter conditions based on query parameters
 function buildFilterConditions(query: any) {
   const filters: any = {};
 
@@ -112,7 +89,7 @@ function buildFilterConditions(query: any) {
 
   if (query.dateTo) {
     const toDate = new Date(query.dateTo);
-    toDate.setHours(23, 59, 59, 999); // End of day
+    toDate.setHours(23, 59, 59, 999); 
     if (!filters.createdAt) filters.createdAt = {};
     filters.createdAt.lte = toDate;
   }
@@ -120,7 +97,6 @@ function buildFilterConditions(query: any) {
   return filters;
 }
 
-// CSV Export - Download buyers as CSV with optional filters
 export async function exportBuyersCSV(req: AuthenticatorRequest, res: Response) {
   try {
     const senderId = req.user?.id;
@@ -131,16 +107,13 @@ export async function exportBuyersCSV(req: AuthenticatorRequest, res: Response) 
       });
     }
 
-    // Build filter conditions from query parameters
     const filterConditions = buildFilterConditions(req.query);
     
-    // Add owner filter
     const whereClause = {
       ownerId: senderId,
       ...filterConditions
     };
 
-    // Fetch buyers with applied filters
     const buyers = await Client.buyer.findMany({
       where: whereClause,
       orderBy: {
@@ -155,7 +128,6 @@ export async function exportBuyersCSV(req: AuthenticatorRequest, res: Response) 
       });
     }
 
-    // Transform data for CSV export
     const csvData = buyers.map(buyer => ({
       fullName: buyer.fullName,
       email: buyer.email || '',
@@ -174,16 +146,14 @@ export async function exportBuyersCSV(req: AuthenticatorRequest, res: Response) 
       createdAt: buyer.createdAt.toISOString(),
     }));
 
-    // Generate CSV with proper quoting for export
     const csv = Papa.unparse(csvData, {
-      quotes: true, // Always quote fields to handle commas in data
+      quotes: true, 
       quoteChar: '"',
       escapeChar: '"',
       delimiter: ',',
       header: true
     });
 
-    // Set headers for file download
     const timestamp = new Date().toISOString().split('T')[0];
     const hasFilters = Object.keys(filterConditions).length > 0;
     const filename = `buyers_export${hasFilters ? '_filtered' : ''}_${timestamp}.csv`;
@@ -202,8 +172,6 @@ export async function exportBuyersCSV(req: AuthenticatorRequest, res: Response) 
   }
 }
 
-// CSV Import - Upload and process CSV file
-// CSV Import - Upload and process CSV file
 export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) {
   try {
     const senderId = req.user?.id;
@@ -214,7 +182,6 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
       });
     }
 
-    // Check if file was uploaded
     if (!req.file) {
       return res.status(400).json({
         error: "No file uploaded",
@@ -222,7 +189,6 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
       });
     }
 
-    // Validate file size (additional check)
     if (req.file.size === 0) {
       return res.status(400).json({
         error: "Empty file",
@@ -230,10 +196,8 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
       });
     }
 
-    // Parse CSV content
     const csvContent = req.file.buffer.toString('utf-8');
     
-    // Check if file has content
     if (!csvContent.trim()) {
       return res.status(400).json({
         error: "Empty file content",
@@ -267,7 +231,6 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
       });
     }
 
-    // Validate headers
     const headers = Object.keys(csvData[0] || {});
     const headerValidation = validateCSVHeaders(headers);
     
@@ -282,13 +245,11 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
     const validBuyers = [];
     const errors = [];
 
-    // Validate each row
     for (let i = 0; i < csvData.length; i++) {
       const rowData = csvData[i];
       const result = CSVBuyerSchema.safeParse(rowData);
 
       if (result.success) {
-        // Convert data for Prisma
         const buyerData = {
           fullName: result.data.fullName,
           email: result.data.email || null,
@@ -310,7 +271,7 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
         validBuyers.push(buyerData);
       } else {
         errors.push({
-          row: i + 2, // +2 because CSV has header row and arrays are 0-indexed
+          row: i + 2, 
           data: rowData,
           errors: result.error.format()
         });
@@ -321,13 +282,12 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
       return res.status(400).json({
         error: "All rows have validation errors",
         message: "No valid data found to import",
-        details: errors.slice(0, 10) // Limit error details to first 10
+        details: errors.slice(0, 10) 
       });
     }
 
-    // Check for duplicates by email before insertion
     const emailsToCheck = validBuyers
-      .filter(buyer => buyer.email) // Only check buyers with email
+      .filter(buyer => buyer.email) 
       .map(buyer => buyer.email as string);
 
     let existingEmails:any = [];
@@ -346,14 +306,12 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
       existingEmails = existingBuyers.map(buyer => buyer.email);
     }
 
-    // Filter out buyers with duplicate emails
     const buyersToInsert = validBuyers.filter(buyer => 
       !buyer.email || !existingEmails.includes(buyer.email)
     );
 
     const duplicateCount = validBuyers.length - buyersToInsert.length;
 
-    // Insert valid buyers
     let createdBuyers;
     try {
       if (buyersToInsert.length > 0) {
@@ -380,7 +338,7 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
         successful: createdBuyers.count,
         failed: errors.length,
         duplicatesSkipped: duplicateCount,
-        errors: errors.length > 0 ? errors.slice(0, 5) : undefined // Show first 5 errors
+        errors: errors.length > 0 ? errors.slice(0, 5) : undefined 
       }
     });
 
@@ -402,7 +360,6 @@ export async function importBuyersCSV(req: AuthenticatorRequest, res: Response) 
   }
 }
 
-// Get CSV template - Download empty CSV with proper headers
 export async function getCSVTemplate(req: AuthenticatorRequest, res: Response) {
   try {
     const templateData = [{
@@ -438,7 +395,6 @@ export async function getCSVTemplate(req: AuthenticatorRequest, res: Response) {
   }
 }
 
-// Utility function to validate CSV structure before processing
 export function validateCSVHeaders(headers: string[]): { valid: boolean; missing: string[] } {
   const requiredHeaders = [
     'fullName', 'phone', 'city', 'propertyType', 
@@ -456,7 +412,6 @@ export function validateCSVHeaders(headers: string[]): { valid: boolean; missing
   };
 }
 
-// Get import/export statistics
 export async function getImportExportStats(req: AuthenticatorRequest, res: Response) {
   try {
     const senderId = req.user?.id;
@@ -475,7 +430,7 @@ export async function getImportExportStats(req: AuthenticatorRequest, res: Respo
       where: {
         ownerId: senderId,
         createdAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) 
         }
       }
     });

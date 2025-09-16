@@ -1,8 +1,7 @@
 import type{ Response,Request,NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-// import path from 'path';
-import { fileURLToPath } from 'url';  // Built-in Node.js module
+import { fileURLToPath } from 'url'; 
 import path,{ dirname } from 'path';  
 
 const __filename = fileURLToPath(import.meta.url);

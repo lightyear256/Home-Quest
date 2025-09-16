@@ -1,10 +1,9 @@
-import type { Response, Request } from "express";
+import type { Response} from "express";
 import { Client } from "../config/db.js";
-import z, { success } from "zod";
+import z from "zod";
 import type { AuthenticatorRequest } from "../middleware/authMiddleware.js";
 
 export const BuyerSchema = z.object({
-  //   id: z.string().uuid(),
   fullName: z.string().min(2).max(80),
   email: z.string().email().optional(),
   phone: z.string().min(10).max(15),
@@ -15,7 +14,7 @@ export const BuyerSchema = z.object({
   budgetMin: z.number().int().positive().optional(),
   budgetMax: z.number().int().positive().optional(),
   timeline: z.enum(["ZeroToThree", "ThreeToSix", "MoreThanSix", "Exploring"]),
-  source: z.enum(["Website", "Referral", "Walk-in", "Call", "Other"]),
+  source: z.enum(["Website", "Referral", "WalkIn", "Call", "Other"]),
   status: z
     .enum([
       "New",
@@ -29,9 +28,7 @@ export const BuyerSchema = z.object({
     .default("New"),
   notes: z.string().max(1000).optional(),
   tags: z.array(z.string()).default([]),
-  //   ownerId: z.string().uuid(),
-  //   createdAt: z.date(),
-  //   updatedAt: z.date(),
+  
 });
 
 export async function delete_buyer(req: AuthenticatorRequest, res: Response) {
@@ -66,7 +63,6 @@ export async function delete_buyer(req: AuthenticatorRequest, res: Response) {
       });
     }
 
-    // Add to buyer history before deletion
     await Client.buyerHistory.create({
       data: {
         buyerId: id,
@@ -80,7 +76,6 @@ export async function delete_buyer(req: AuthenticatorRequest, res: Response) {
       },
     });
 
-    // Delete the buyer
     const deletedBuyer = await Client.buyer.delete({
       where: {
         id,
@@ -126,7 +121,6 @@ export async function update_buyer_status(
       });
     }
 
-    // Validate status
     const validStatuses = [
       "New",
       "Qualified",
@@ -143,7 +137,6 @@ export async function update_buyer_status(
       });
     }
 
-    // First check if buyer exists and belongs to user
     const existingBuyer = await Client.buyer.findFirst({
       where: {
         id,
@@ -159,7 +152,6 @@ export async function update_buyer_status(
       });
     }
 
-    // Add to buyer history before status update
     await Client.buyerHistory.create({
       data: {
         buyerId: id,
@@ -176,7 +168,6 @@ export async function update_buyer_status(
       },
     });
 
-    // Update buyer status
     const updatedBuyer = await Client.buyer.update({
       where: {
         id,
@@ -202,7 +193,85 @@ export async function update_buyer_status(
     });
   }
 }
-export async function update_buyer(req: AuthenticatorRequest, res: Response) {}
+const BuyerUpdateSchema = BuyerSchema.partial();
+export async function update_buyer(req: AuthenticatorRequest, res: Response) {
+  try {
+    const senderId = req.user?.id;
+    const buyerId = req.params.id; 
+
+    if (!senderId) {
+      return res.status(401).json({ error: "Unauthorized: User ID not found" });
+    }
+
+    const result = BuyerUpdateSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error.format() });
+    }
+
+    const existingBuyer = await Client.buyer.findFirst({
+      where: { id: buyerId as string, ownerId: senderId },
+    });
+    if (!existingBuyer) {
+      return res.status(404).json({ error: "Buyer not found" });
+    }
+
+    const data = result.data;
+
+    const updateData: any = {};
+    for (const key of Object.keys(data)) {
+      const value = (data as any)[key];
+      if (value !== undefined) updateData[key] = value ?? null;
+    }
+
+    const changes: Record<string, { from: any; to: any }> = {};
+    for (const key of Object.keys(updateData)) {
+      const oldVal = (existingBuyer as any)[key];
+      const newVal = updateData[key];
+      if (oldVal !== newVal) {
+        changes[key] = { from: oldVal, to: newVal };
+      }
+    }
+
+    const updatedBuyer = await Client.buyer.update({
+      where: { id: buyerId as string },
+      data: updateData,
+    });
+
+    if (Object.keys(changes).length > 0) {
+      await Client.buyerHistory.create({
+        data: {
+          buyerId: buyerId as string,
+          changedBy: senderId,
+          diff: {
+            action: "BUYER_UPDATED",
+            changes,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Buyer updated successfully",
+      buyer: updatedBuyer,
+    });
+  } catch (error: any) {
+    console.error("Update buyer error:", error);
+
+    if (error.code === "P2002") {
+      return res.status(409).json({
+        error: "Duplicate field value violates unique constraint",
+      });
+    }
+
+    return res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to update buyer",
+    });
+  }
+}
+
 export async function addBuyer(req: AuthenticatorRequest, res: Response) {
   try {
     const result = BuyerSchema.safeParse(req.body);
@@ -220,7 +289,6 @@ export async function addBuyer(req: AuthenticatorRequest, res: Response) {
 
     const data = result.data;
 
-    // Check for existing buyer with same email (if email is provided)
     if (data.email) {
       const existingBuyer = await Client.buyer.findFirst({
         where: {
@@ -347,7 +415,7 @@ function buildFilterConditions(query: any) {
 
   if (query.dateTo) {
     const toDate = new Date(query.dateTo);
-    toDate.setHours(23, 59, 59, 999); // End of day
+    toDate.setHours(23, 59, 59, 999); 
     if (!filters.createdAt) filters.createdAt = {};
     filters.createdAt.lte = toDate;
   }
@@ -378,15 +446,12 @@ export async function Buyers(req: AuthenticatorRequest, res: Response) {
         });
       }
 
-      // Build filter conditions from query parameters
       const filterConditions = buildFilterConditions(req.query);
 
-      // Add owner filter
       const whereClause = {
         ...filterConditions,
       };
 
-      // Fetch buyers with applied filters
       const buyers1 = await Client.buyer.findMany({
         where: whereClause,
         orderBy: {
@@ -401,7 +466,6 @@ export async function Buyers(req: AuthenticatorRequest, res: Response) {
         });
       }
 
-      // Transform data for CSV export
       const buyers = buyers1.map((buyer) => ({
         id: buyer.id,
         ownerId: buyer.ownerId,
@@ -423,24 +487,7 @@ export async function Buyers(req: AuthenticatorRequest, res: Response) {
         updatedAt: buyer.updatedAt,
       }));
 
-      // Generate CSV with proper quoting for export
-      // const csv = Papa.unparse(csvData, {
-      //   quotes: true, // Always quote fields to handle commas in data
-      //   quoteChar: '"',
-      //   escapeChar: '"',
-      //   delimiter: ',',
-      //   header: true
-      // });
-
-      // Set headers for file download
-      // const timestamp = new Date().toISOString().split('T')[0];
-      // const hasFilters = Object.keys(filterConditions).length > 0;
-      // const filename = `buyers_export${hasFilters ? '_filtered' : ''}_${timestamp}.csv`;
-
-      // res.setHeader('Content-Type', 'text/csv');
-      // res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
-      // return res.status(200).send(csv);
+      
       res.send({
         buyers,
         success: true,
@@ -482,50 +529,7 @@ export async function history(req: AuthenticatorRequest, res: Response) {
       });
     }
 
-    // Fetch buyers with applied filters
     
-
-    // Transform data for CSV export
-    // const buyers = buyers1.map((buyer) => ({
-    //   id: buyer.id,
-    //   ownerId: buyer.ownerId,
-    //   fullName: buyer.fullName,
-    //   email: buyer.email || "",
-    //   phone: buyer.phone,
-    //   city: buyer.city,
-    //   propertyType: buyer.propertyType,
-    //   bhk: bhkcnv[buyer.bhk as string] || "",
-    //   purpose: buyer.purpose,
-    //   budgetMin: buyer.budgetMin || "",
-    //   budgetMax: buyer.budgetMax || "",
-    //   timeline: timecnv[buyer.timeline],
-    //   source: buyer.source,
-    //   status: buyer.status,
-    //   notes: buyer.notes || "",
-    //   tags: buyer.tags,
-    //   createdAt: buyer.createdAt,
-    //   updatedAt: buyer.updatedAt,
-    // }));
-
-    // Generate CSV with proper quoting for export
-    // const csv = Papa.unparse(csvData, {
-    //   quotes: true, // Always quote fields to handle commas in data
-    //   quoteChar: '"',
-    //   escapeChar: '"',
-    //   delimiter: ',',
-    //   header: true
-    // });
-
-    // Set headers for file download
-    // const timestamp = new Date().toISOString().split('T')[0];
-    // const hasFilters = Object.keys(filterConditions).length > 0;
-    // const filename = `buyers_export${hasFilters ? '_filtered' : ''}_${timestamp}.csv`;
-
-    // res.setHeader('Content-Type', 'text/csv');
-    // res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
-    // return res.status(200).send(csv);
-
     const data = await Client.buyerHistory.findMany({
       where: {
         buyerId: String(id),
@@ -538,6 +542,33 @@ export async function history(req: AuthenticatorRequest, res: Response) {
   } catch (error) {
     res.status(500).send({
       msg: "internal server error",
+    });
+  }
+}
+
+export async function getTotalClients(req: AuthenticatorRequest,res: Response) {
+  try {
+    const totalClients = await Client.buyer.count();
+
+    const pendingDeals = await Client.buyer.count({
+      where: {
+        status: {
+          notIn: ["Converted", "Dropped"],
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      totalClients,
+      pendingDeals,
+    });
+  } catch (error: any) {
+    console.error("Error fetching client stats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching stats",
+      error: error.message,
     });
   }
 }

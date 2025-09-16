@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-// import { Button } from './components/Buttons';
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -16,91 +15,11 @@ import {
   X,
   MoreVertical,
 } from "lucide-react";
-import { Button } from "../components/Buttons";
 import axios from "axios";
 import Link from "next/link";
-import { buyers } from "../../../../backend/src/controller/buyerController";
-// Mock data
-// const mockBuyers = [
-//   {
-//     id: 1,
-//     fullName: "Rajesh Kumar",
-//     email: "rajesh@example.com",
-//     phone: "9876543210",
-//     city: "Chandigarh",
-//     propertyType: "Apartment",
-//     bhk: "3",
-//     purpose: "Buy",
-//     budgetMin: 5000000,
-//     budgetMax: 8000000,
-//     timeline: "3-6m",
-//     source: "Website",
-//     status: "New",
-//     notes: "Looking for sea-facing apartment",
-//     tags: ["Premium", "Urgent"],
-//     updatedAt: "2024-01-15T10:30:00Z",
-//     ownerId: "user123"
-//   },
-//   {
-//     id: 2,
-//     fullName: "Priya Sharma",
-//     email: "priya@example.com",
-//     phone: "8765432109",
-//     city: "Mohali",
-//     propertyType: "Villa",
-//     bhk: "4",
-//     purpose: "Rent",
-//     budgetMin: 80000,
-//     budgetMax: 120000,
-//     timeline: "0-3m",
-//     source: "Referral",
-//     status: "Qualified",
-//     notes: "Family of 5, needs garden",
-//     tags: ["Family"],
-//     updatedAt: "2024-01-14T15:20:00Z",
-//     ownerId: "user123"
-//   },
-//   {
-//     id: 3,
-//     fullName: "Amit Singh",
-//     email: "",
-//     phone: "7654321098",
-//     city: "Zirakpur",
-//     propertyType: "Plot",
-//     bhk: null,
-//     purpose: "Buy",
-//     budgetMin: 2000000,
-//     budgetMax: 3500000,
-//     timeline: ">6m",
-//     source: "Walk-in",
-//     status: "Contacted",
-//     notes: "Investment purpose",
-//     tags: ["Investment"],
-//     updatedAt: "2024-01-13T09:45:00Z",
-//     ownerId: "user456"
-//   },
-//   {
-//     id: 4,
-//     fullName: "Sunita Gupta",
-//     email: "sunita@example.com",
-//     phone: "6543210987",
-//     city: "Panchkula",
-//     propertyType: "Office",
-//     bhk: null,
-//     purpose: "Rent",
-//     budgetMin: 150000,
-//     budgetMax: 250000,
-//     timeline: "3-6m",
-//     source: "Call",
-//     status: "Visited",
-//     notes: "IT company expansion",
-//     tags: ["Commercial", "Urgent"],
-//     updatedAt: "2024-01-12T14:10:00Z",
-//     ownerId: "user123"
-//   }
-// ];
+import { Button } from "../components/Buttons";
 
-const statusColors = {
+const statusColors:any = {
   New: "bg-blue-100 text-blue-800",
   Qualified: "bg-green-100 text-green-800",
   Contacted: "bg-yellow-100 text-yellow-800",
@@ -111,8 +30,9 @@ const statusColors = {
 };
 
 export default function BuyersPage() {
-  const [buyers, setBuyers] = useState([]);
-  const [filteredBuyers, setFilteredBuyers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [buyers, setBuyers] = useState<any | null>([]);
+  const [filteredBuyers, setFilteredBuyers] = useState<any | null>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     city: "",
@@ -127,12 +47,14 @@ export default function BuyersPage() {
   const [sortDirection, setSortDirection] = useState("desc");
   const [selectedBuyers, setSelectedBuyers] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [buyerToDelete, setBuyerToDelete] = useState("");
+  const [buyerToDelete, setBuyerToDelete] = useState<any | null>("");
 
   const router = useRouter();
   const itemsPerPage = 10;
   async function fetcher() {
-    const response = await axios.get(
+    try{
+      setLoading(true);
+      const response = await axios.get(
       `${process.env.NEXT_PUBLIC_API_URL}/buyer/buyer`,
       {
         headers: {
@@ -144,13 +66,18 @@ export default function BuyersPage() {
       setBuyers(response.data.buyers);
       setFilteredBuyers(response.data.buyers);
     }
+    }catch(e:any){
+      console.log("error Encountered ",e);
+    }finally{
+      setLoading(false)
+    }
+    
   }
   useEffect(() => {
     setIsLoaded(true);
     fetcher();
   }, []);
 
-  // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       applyFiltersAndSearch();
@@ -162,7 +89,6 @@ export default function BuyersPage() {
     if (buyers) {
       let filtered = [...buyers];
 
-      // Apply search
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         filtered = filtered.filter(
@@ -173,14 +99,12 @@ export default function BuyersPage() {
         );
       }
 
-      // Apply filters
       Object.entries(filters).forEach(([key, value]) => {
         if (value) {
           filtered = filtered.filter((buyer) => buyer[key] === value);
         }
       });
 
-      // Apply sorting
       filtered.sort((a, b) => {
         let aValue = a[sortField];
         let bValue = b[sortField];
@@ -201,7 +125,7 @@ export default function BuyersPage() {
     }
   }, [searchQuery, filters, buyers, sortField, sortDirection]);
 
-  const handleFilterChange = (key, value) => {
+  const handleFilterChange = (key:any, value:any) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
@@ -218,8 +142,8 @@ export default function BuyersPage() {
     setSearchQuery("");
   };
 
-  const formatBudget = (min, max) => {
-    const formatAmount = (amount) => {
+  const formatBudget = (min:number, max:number) => {
+    const formatAmount = (amount:number) => {
       if (amount >= 10000000) return `₹${(amount / 10000000).toFixed(1)}Cr`;
       if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
       return `₹${amount.toLocaleString()}`;
@@ -233,7 +157,7 @@ export default function BuyersPage() {
     return "Not specified";
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString:string) => {
     return new Date(dateString).toLocaleDateString("en-IN", {
       day: "2-digit",
       month: "short",
@@ -248,7 +172,7 @@ export default function BuyersPage() {
 
   const confirmDelete = async () => {
     if (buyerToDelete) {
-      setBuyers((prev) => prev.filter((b: any) => b.id !== buyerToDelete));
+      setBuyers((prev:any) => prev.filter((b: any) => b.id !== buyerToDelete));
       const response = await axios.delete(
         `${process.env.NEXT_PUBLIC_API_URL}/buyer/delete`,
         {
@@ -265,7 +189,7 @@ export default function BuyersPage() {
     }
   };
 
-  const handleStatusChange = async (buyerId, newStatus) => {
+  const handleStatusChange = async (buyerId:string, newStatus:any) => {
     const response = await axios.put(
       `${process.env.NEXT_PUBLIC_API_URL}/buyer/update_status`,
       {
@@ -298,7 +222,7 @@ export default function BuyersPage() {
       "fullName,email,phone,city,propertyType,bhk,purpose,budgetMin,budgetMax,timeline,source,notes,tags,status";
     const rows = filteredBuyers
       .map(
-        (buyer) =>
+        (buyer:any) =>
           `"${buyer.fullName}","${buyer.email || ""}","${buyer.phone}","${
             buyer.city
           }","${buyer.propertyType}","${buyer.bhk || ""}","${buyer.purpose}","${
@@ -317,7 +241,6 @@ export default function BuyersPage() {
     link.click();
   };
 
-  // Pagination
   const totalPages = Math.ceil(filteredBuyers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedBuyers = filteredBuyers.slice(
@@ -325,10 +248,20 @@ export default function BuyersPage() {
     startIndex + itemsPerPage
   );
 
+if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading buyer details...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className=" mt-25 min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div
           className={`mb-8 transition-all duration-1000 ${
             isLoaded ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
@@ -362,7 +295,7 @@ export default function BuyersPage() {
                 <Download className="w-4 h-4" />
                 Export CSV
               </Button>
-              <Link href={"/add_lead"}>
+              <Link href={"/buyers/new"}>
                 <Button
                   variant="primary"
                   size="md"
@@ -377,7 +310,6 @@ export default function BuyersPage() {
           </div>
         </div>
 
-        {/* Search and Filters */}
         <div
           className={`bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 mb-6 transition-all duration-1000 delay-200 ${
             isLoaded ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
@@ -409,7 +341,6 @@ export default function BuyersPage() {
             </Button>
           </div>
 
-          {/* Filter Panel */}
           {showFilters && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-slate-200">
               <select
@@ -476,7 +407,6 @@ export default function BuyersPage() {
           )}
         </div>
 
-        {/* Results Summary */}
         <div className="flex justify-between items-center mb-4">
           <p className="text-slate-600">
             Showing {startIndex + 1}-
@@ -503,7 +433,6 @@ export default function BuyersPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div
           className={`bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl overflow-hidden transition-all duration-1000 delay-400 ${
             isLoaded ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
@@ -560,7 +489,7 @@ export default function BuyersPage() {
                         )}
                         {buyer.tags.length > 0 && (
                           <div className="flex gap-1 mt-1">
-                            {buyer.tags.slice(0, 2).map((tag) => (
+                            {buyer.tags.slice(0, 2).map((tag:string) => (
                               <span
                                 key={tag}
                                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800"
@@ -634,7 +563,7 @@ export default function BuyersPage() {
                         <div className="flex gap-x-1">
                         <button
                           onClick={() =>
-                            router.push(`/buyers/${buyer.id}/edit`)
+                            router.push(`/buyers/edit/${buyer.id}`)
                           }
                           className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
                           title="Edit"
@@ -660,7 +589,6 @@ export default function BuyersPage() {
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-200 flex items-center justify-between">
               <div className="text-sm text-slate-600">
@@ -696,10 +624,8 @@ export default function BuyersPage() {
           )}
         </div>
 
-        {/* Empty State */}
         {filteredBuyers.length === 0 && (
           <div className="text-center py-12">
-            {/* <div className="text-slate-400 text-6xl mb-4">🔍</div> */}
             <h3 className="text-xl font-semibold text-slate-700 mb-2">
               No leads found
             </h3>
@@ -713,7 +639,6 @@ export default function BuyersPage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md mx-4">

@@ -1,7 +1,6 @@
 import type{ Request, Response } from "express";
 import z from "zod";
 import bcrypt from "bcrypt";
-// import { Client } from "../generated/prisma/index.js";
 import jwt from "jsonwebtoken";
 import { Client } from "../config/db.js";
 const registerSchema = z.object({
@@ -114,4 +113,5 @@ export async function signin(req: Request, res: Response) {
     });
   }
 }
+
 
