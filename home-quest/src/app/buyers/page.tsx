@@ -561,7 +561,8 @@ function BuyersContent() {
                       {buyer.timeline}
                     </td>
                     <td className="px-6 py-4">
-                      <select
+
+                      {buyer.ownerId===localStorage.getItem("session-id")?<select
                         value={buyer.status}
                         onChange={(e) =>
                           handleStatusChange(buyer.id, e.target.value)
@@ -576,8 +577,10 @@ function BuyersContent() {
                         <option value="Visited">Visited</option>
                         <option value="Negotiation">Negotiation</option>
                         <option value="Converted">Converted</option>
-                        <option value="Dropped">Dropped</option>
-                      </select>
+                        <option value="Dropped">Dropped</option> 
+                      </select>:<div className={`text-xs text-center font-semibold px-2 py-1 rounded-full border-0 ${
+                          statusColors[buyer.status]
+                        }`}>{buyer.status}</div>}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500">
                       {formatDate(buyer.updatedAt)}
