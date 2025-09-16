@@ -11,11 +11,25 @@ dotenv.config({
   path: path.resolve(__dirname, '../../.env'), 
 });
 
-export interface AuthenticatorRequest extends Request{
-    user?:{
-        id:string;
-        email:string;
-    }
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination?: string;
+  filename?: string;
+  path?: string;
+  buffer: Buffer;
+}
+
+export interface AuthenticatorRequest extends Omit<Request, 'file' | 'files'> {
+    user?: {
+        id: string;
+        email: string;
+    };
+    file?: MulterFile;
+    files?: MulterFile[] | { [fieldname: string]: MulterFile[] };
 }
 
 export const authMiddleware= async(req:AuthenticatorRequest,res:Response,next:NextFunction)=>{
@@ -40,5 +54,4 @@ export const authMiddleware= async(req:AuthenticatorRequest,res:Response,next:Ne
             error:error
         })
     }
-
 }

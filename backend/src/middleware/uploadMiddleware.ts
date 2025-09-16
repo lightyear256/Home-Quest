@@ -1,9 +1,21 @@
 import multer from 'multer';
 import type { Request, Response, NextFunction } from 'express';
 
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  destination?: string;
+  filename?: string;
+  path?: string;
+  buffer: Buffer;
+}
+
 const storage = multer.memoryStorage();
 
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: Request, file: MulterFile, cb: multer.FileFilterCallback) => {
   if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
     cb(null, true);
   } else {
@@ -63,14 +75,10 @@ export const handleUploadError = (error: any, req: Request, res: Response, next:
 
 export const uploadSingleCSV = upload.single('csvFile');
 
-
 export const csvUploadMiddleware = [uploadSingleCSV, handleUploadError];
-
-
 
 export default {
   uploadSingleCSV,
   handleUploadError,
   csvUploadMiddleware,
-
 };
