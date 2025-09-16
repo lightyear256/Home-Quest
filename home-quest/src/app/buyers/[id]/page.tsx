@@ -94,7 +94,6 @@ const BuyerDetailsPage = () => {
       console.error('Error fetching buyer history:', err);
     } finally {
       setHistoryLoading(false);
-      setLoading(true)
     }
   };
 
